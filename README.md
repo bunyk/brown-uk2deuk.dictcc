@@ -7,14 +7,14 @@ Many thanks for their generous permission to use their dictionary data for this 
 
 To get data yourself, clone this and dict_uk repositories:
 
-```
+```bash
 git clone https://github.com/brown-uk/dict_uk.git
 git clone https://github.com/bunyk/brown-uk2deuk.dictcc.git
 ```
 
 Then build dict_uk according to it's instructions depending on your system. I did:
 
-```
+```bash
 cd dict_uk
 docker build -t brown-uk/dict_uk .
 docker run -d --name dict_uk brown-uk/dict_uk /bin/bash
@@ -36,7 +36,7 @@ Format for each line of that file is (lexem, space, lexem, space, colon separate
 
 To generate inflections for nouns, adjectives and verbs, run the following commands:
 
-```
+```bash
 # generate nouns in "nom.sg | gen.sg | pl" format:
 python brown-uk2deuk.dictcc/convert.py noun dict_uk/out/out/dict_corp_lt.txt | tee brown-uk2deuk.dictcc/nouns.txt
 
