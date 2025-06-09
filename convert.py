@@ -67,6 +67,8 @@ class Adjectives(Selector):
             return # only basic form (skip comparatives & superlatives)
         if 'v_naz' not in tags:
             return # only nominative
+        if 'long' in tags:
+            return # skip long forms, they sound a bit too formal & archaic
 
         for form in ['m', 'n', 'f', 'p']:
             if form not in tags:
