@@ -51,9 +51,11 @@ python brown-uk2deuk.dictcc/convert.py adj dict_uk/out/out/dict_corp_lt.txt | te
 python brown-uk2deuk.dictcc/convert.py verb dict_uk/out/out/dict_corp_lt.txt | tee brown-uk2deuk.dictcc/verbs.txt
 ```
 
-Currently repository based on VESUM v6.6.5 contains:
+Currently repository based on VESUM v6.6.5 contains this many entries:
 
+```
    86110 adjectives.txt
   173000 nouns.txt
    27198 verbs.txt
   286308 total
+```
