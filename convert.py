@@ -45,17 +45,23 @@ class Selector:
 
     def print(self):
         for lemma, forms in self.words.items():
+            for k, v in forms.items():
+                if isinstance(v, set):
+                    forms[k] = ' / '.join(sorted(v))
             print(self.format(lemma, forms))
 
     def add_form(self, lemma, form, lexem, variants=False):
-        if form in self.words[lemma]:
-            if self.words[lemma][form] != lexem:
-                if variants:
-                    self.words[lemma][form] += ' / ' + lexem
-                else:
-                    print(f"Warning: {lemma} already has form {form} with value {self.words[lemma][form]}, but trying to set it to {lexem}", file=sys.stderr)
-                    return
-        self.words[lemma][form] = lexem
+        if form not in self.words[lemma]:
+            self.words[lemma][form] = lexem
+            return
+        if self.words[lemma][form] != lexem:
+            if variants:
+                if isinstance(self.words[lemma][form], str):
+                    self.words[lemma][form] = {self.words[lemma][form]}
+                self.words[lemma][form].add(lexem)
+            else:
+                print(f"Warning: {lemma} already has form {form} with value {self.words[lemma][form]}, but trying to set it to {lexem}", file=sys.stderr)
+            return
 
 class Nouns(Selector):
     def add(self, lexem, lemma, tags):
@@ -98,16 +104,16 @@ class Verbs(Selector):
         if tags == {'verb', 'imperf', 'inf'}:
             self.add_form(lemma, 'imperf_inf', lexem)
         elif tags == {'verb', 'imperf', 'pres', 's', '1'}:
-            self.add_form(lemma, 'present.1p.sg', lexem)
+            self.add_form(lemma, 'present.1p.sg', lexem, variants=True)
         elif tags == {'verb', 'imperf', 'past', 'm'}:
-            self.add_form(lemma, 'past', lexem)
+            self.add_form(lemma, 'past', lexem, variants=True)
 
         elif tags == {'verb', 'perf', 'inf'}:
             self.add_form(lemma, 'perf_inf', lexem)
         elif tags == {'verb', 'perf', 'futr', 's', '1'}:
-            self.add_form(lemma, 'future.1p.sg', lexem)
+            self.add_form(lemma, 'future.1p.sg', lexem, variants=True)
         elif tags == {'verb', 'perf', 'past', 'm'}:
-            self.add_form(lemma, 'past', lexem)
+            self.add_form(lemma, 'past', lexem, variants=True)
 
     def format(self, lemma, forms):
         if 'imperf_inf' in forms:
