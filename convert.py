@@ -7,11 +7,11 @@ https://github.com/brown-uk/dict_uk/blob/master/doc/tags.txt
 
 USAGE = "Usage: python convert.py <adj|noun|verb> <filename>"
 from itertools import islice
-from sys import argv
+import sys
 from collections import defaultdict
 
 def main():
-    if len(argv) != 3:
+    if len(sys.argv) != 3:
         print(USAGE)
         return
 
@@ -20,20 +20,20 @@ def main():
         'verb': Verbs(),
         'adj': Adjectives(),
     }
-    if argv[1] not in selectors:
+    if sys.argv[1] not in selectors:
         print(USAGE)
         return
 
-    selector = selectors[argv[1]]
+    selector = selectors[sys.argv[1]]
     
-    with open(argv[2]) as dict_uk:
+    with open(sys.argv[2]) as dict_uk:
         for line in dict_uk:
             line = line.strip()
             lexem, lemma, tags = line.split(' ')
             tags = set(tags.split(':'))
 
-            if {'bad', 'rare', 'arch', 'alt'}.intersection(tags):
-                continue # skip errorneous, rare, achaic and non-normative forms
+            if {'bad', 'rare', 'arch', 'alt', 'subst'}.intersection(tags):
+                continue # skip errorneous, rare, achaic, non-normative and substandard forms
 
             selector.add(lexem, lemma, tags)
 
@@ -47,14 +47,26 @@ class Selector:
         for lemma, forms in self.words.items():
             print(self.format(lemma, forms))
 
+    def add_form(self, lemma, form, lexem, variants=False):
+        if form in self.words[lemma]:
+            if self.words[lemma][form] != lexem:
+                if variants:
+                    self.words[lemma][form] += ' / ' + lexem
+                else:
+                    print(f"Warning: {lemma} already has form {form} with value {self.words[lemma][form]}, but trying to set it to {lexem}", file=sys.stderr)
+                    return
+        self.words[lemma][form] = lexem
+
 class Nouns(Selector):
     def add(self, lexem, lemma, tags):
         if 'noun' not in tags:
             return
+        if tags.intersection({'lname', 'pname'}):
+            return # skip last and paternal names
         if 'p' not in tags and 'v_rod' in tags: # take singular genitive
-            self.words[lemma]['gen.sg'] = lexem
+            self.add_form(lemma, 'gen.sg', lexem, variants=True)
         if 'p' in tags and 'v_naz' in tags: # and plural nominative
-            self.words[lemma]['pl'] = lexem
+            self.add_form(lemma, 'pl', lexem, variants=True)
 
     def format(self, lemma, forms):
         return f"{lemma} | {forms.get('gen.sg', '-')} | {forms.get('pl', '-')}"
@@ -67,13 +79,13 @@ class Adjectives(Selector):
             return # only basic form (skip comparatives & superlatives)
         if 'v_naz' not in tags:
             return # only nominative
-        if 'long' in tags:
-            return # skip long forms, they sound a bit too formal & archaic
+        if 'long' in tags or 'short' in tags:
+            return # skip long and short forms, they sound a bit too sofisticated
 
         for form in ['m', 'n', 'f', 'p']:
             if form not in tags:
                 continue
-            self.words[lemma][form] = lexem
+            self.add_form(lemma, form, lexem)
 
     def format(self, lemma, forms):
         return f"{forms.get('m', '-')} | {forms.get('n', '-')} | {forms.get('f', '-')} | {forms.get('p', '-')}"
@@ -84,18 +96,18 @@ class Verbs(Selector):
             return
 
         if tags == {'verb', 'imperf', 'inf'}:
-            self.words[lemma]['imperf_inf'] = lexem
+            self.add_form(lemma, 'imperf_inf', lexem)
         elif tags == {'verb', 'imperf', 'pres', 's', '1'}:
-            self.words[lemma]['present.1p.sg'] = lexem
+            self.add_form(lemma, 'present.1p.sg', lexem)
         elif tags == {'verb', 'imperf', 'past', 'm'}:
-            self.words[lemma]['past'] = lexem
+            self.add_form(lemma, 'past', lexem)
 
         elif tags == {'verb', 'perf', 'inf'}:
-            self.words[lemma]['perf_inf'] = lexem
+            self.add_form(lemma, 'perf_inf', lexem)
         elif tags == {'verb', 'perf', 'futr', 's', '1'}:
-            self.words[lemma]['future.1p.sg'] = lexem
+            self.add_form(lemma, 'future.1p.sg', lexem)
         elif tags == {'verb', 'perf', 'past', 'm'}:
-            self.words[lemma]['past'] = lexem
+            self.add_form(lemma, 'past', lexem)
 
     def format(self, lemma, forms):
         if 'imperf_inf' in forms:
